@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown Timer</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        h1 {
+            margin: 0 0 30px;
+            color: #333;
+            font-size: 1.8rem;
+        }
+        .time-inputs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .input-group label {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .input-group input {
+            width: 70px;
+            padding: 10px;
+            font-size: 1.5rem;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: border-color 0.2s;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .display {
+            font-size: 4rem;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+            color: #333;
+            margin: 30px 0;
+            letter-spacing: 2px;
+        }
+        .display.finished {
+            color: #e74c3c;
+            animation: pulse 0.5s ease-in-out infinite alternate;
+        }
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.05); }
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-start {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-start:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn-pause {
+            background: #f39c12;
+            color: white;
+        }
+        .btn-pause:hover:not(:disabled) {
+            background: #e67e22;
+        }
+        .btn-reset {
+            background: #e0e0e0;
+            color: #333;
+        }
+        .btn-reset:hover:not(:disabled) {
+            background: #d0d0d0;
+        }
+        .quick-times {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .quick-btn {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .quick-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .hidden { display: none; }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-overlay.hidden {
+            display: none;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease;
+            max-width: 90%;
+        }
+        .modal-content h2 {
+            margin: 0 0 10px;
+            color: #e74c3c;
+            font-size: 2rem;
+        }
+        .modal-content p {
+            margin: 0 0 20px;
+            color: #666;
+            font-size: 1.2rem;
+        }
+        .modal-content button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Countdown Timer</h1>
+
+        <div class="time-inputs" id="inputSection">
+            <div class="input-group">
+                <label>Hours</label>
+                <input type="number" id="hours" min="0" max="23" value="0">
+            </div>
+            <div class="input-group">
+                <label>Minutes</label>
+                <input type="number" id="minutes" min="0" max="59" value="5">
+            </div>
+            <div class="input-group">
+                <label>Seconds</label>
+                <input type="number" id="seconds" min="0" max="59" value="0">
+            </div>
+        </div>
+
+        <div class="display" id="display">05:00</div>
+
+        <div class="buttons">
+            <button class="btn-start" id="startBtn">Start</button>
+            <button class="btn-pause hidden" id="pauseBtn">Pause</button>
+            <button class="btn-reset" id="resetBtn">Reset</button>
+        </div>
+
+        <div class="quick-times">
+            <button class="quick-btn" data-time="60">1 min</button>
+            <button class="quick-btn" data-time="300">5 min</button>
+            <button class="quick-btn" data-time="600">10 min</button>
+            <button class="quick-btn" data-time="900">15 min</button>
+            <button class="quick-btn" data-time="1800">30 min</button>
+            <button class="quick-btn" data-time="3600">1 hour</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="timeUpModal">
+        <div class="modal-content">
+            <h2>Time's Up!</h2>
+            <p>Your countdown timer has finished.</p>
+            <button id="dismissBtn">Dismiss</button>
+        </div>
+    </div>
+
+    <script>
+        let totalSeconds = 300;
+        let remainingSeconds = totalSeconds;
+        let intervalId = null;
+        let isPaused = false;
+        let audioContext = null;
+        let alertInterval = null;
+
+        function playAlertSound() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            // Create a series of beeps
+            const now = audioContext.currentTime;
+            for (let i = 0; i < 3; i++) {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 880; // A5 note
+                oscillator.type = 'sine';
+
+                const startTime = now + (i * 0.4);
+                gainNode.gain.setValueAtTime(0.3, startTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+
+                oscillator.start(startTime);
+                oscillator.stop(startTime + 0.3);
+            }
+        }
+
+        function startAlertLoop() {
+            playAlertSound();
+            alertInterval = setInterval(playAlertSound, 1500);
+        }
+
+        function stopAlertLoop() {
+            if (alertInterval) {
+                clearInterval(alertInterval);
+                alertInterval = null;
+            }
+        }
+
+        const hoursInput = document.getElementById('hours');
+        const minutesInput = document.getElementById('minutes');
+        const secondsInput = document.getElementById('seconds');
+        const display = document.getElementById('display');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const inputSection = document.getElementById('inputSection');
+
+        function formatTime(totalSec) {
+            const hours = Math.floor(totalSec / 3600);
+            const minutes = Math.floor((totalSec % 3600) / 60);
+            const seconds = totalSec % 60;
+
+            if (hours > 0) {
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function updateDisplay() {
+            display.textContent = formatTime(remainingSeconds);
+        }
+
+        function getInitialSeconds() {
+            const h = parseInt(hoursInput.value) || 0;
+            const m = parseInt(minutesInput.value) || 0;
+            const s = parseInt(secondsInput.value) || 0;
+            return (h * 3600) + (m * 60) + s;
+        }
+
+        function startTimer() {
+            if (intervalId) return;
+
+            if (!isPaused) {
+                totalSeconds = getInitialSeconds();
+                remainingSeconds = totalSeconds;
+            }
+
+            if (remainingSeconds <= 0) {
+                alert('Please set a time greater than zero');
+                return;
+            }
+
+            isPaused = false;
+            display.classList.remove('finished');
+            inputSection.style.opacity = '0.5';
+            inputSection.style.pointerEvents = 'none';
+            startBtn.classList.add('hidden');
+            pauseBtn.classList.remove('hidden');
+
+            intervalId = setInterval(() => {
+                remainingSeconds--;
+                updateDisplay();
+
+                if (remainingSeconds <= 0) {
+                    stopTimer();
+                    display.classList.add('finished');
+                    startAlertLoop();
+                    showModal();
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+                isPaused = true;
+                pauseBtn.textContent = 'Resume';
+            } else if (isPaused) {
+                startTimer();
+                pauseBtn.textContent = 'Pause';
+            }
+        }
+
+        function stopTimer() {
+            clearInterval(intervalId);
+            intervalId = null;
+            startBtn.classList.remove('hidden');
+            pauseBtn.classList.add('hidden');
+            pauseBtn.textContent = 'Pause';
+            isPaused = false;
+        }
+
+        function resetTimer() {
+            stopTimer();
+            remainingSeconds = getInitialSeconds();
+            updateDisplay();
+            display.classList.remove('finished');
+            inputSection.style.opacity = '1';
+            inputSection.style.pointerEvents = 'auto';
+        }
+
+        startBtn.addEventListener('click', startTimer);
+        pauseBtn.addEventListener('click', pauseTimer);
+        resetBtn.addEventListener('click', resetTimer);
+
+        // Quick time buttons
+        document.querySelectorAll('.quick-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const time = parseInt(btn.dataset.time);
+                hoursInput.value = Math.floor(time / 3600);
+                minutesInput.value = Math.floor((time % 3600) / 60);
+                secondsInput.value = time % 60;
+                resetTimer();
+            });
+        });
+
+        // Update display when inputs change
+        [hoursInput, minutesInput, secondsInput].forEach(input => {
+            input.addEventListener('input', () => {
+                if (!intervalId && !isPaused) {
+                    remainingSeconds = getInitialSeconds();
+                    updateDisplay();
+                }
+            });
+        });
+
+        // Initialize display
+        function loadFromQueryString() {
+            const params = new URLSearchParams(window.location.search);
+            const h = parseInt(params.get('hours')) || 0;
+            const m = parseInt(params.get('minutes')) || 0;
+            const s = parseInt(params.get('seconds')) || 0;
+
+            if (h || m || s) {
+                hoursInput.value = h;
+                minutesInput.value = m;
+                secondsInput.value = s;
+                remainingSeconds = getInitialSeconds();
+                updateDisplay();
+            }
+        }
+        loadFromQueryString();
+        updateDisplay();
+
+        // Modal functions
+        const timeUpModal = document.getElementById('timeUpModal');
+        const dismissBtn = document.getElementById('dismissBtn');
+
+        function showModal() {
+            timeUpModal.classList.remove('hidden');
+        }
+
+        function hideModal() {
+            stopAlertLoop();
+            timeUpModal.classList.add('hidden');
+        }
+
+        dismissBtn.addEventListener('click', hideModal);
+    </script>
+</body>
+</html>

@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Actions Tag to SHA Converter</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.5;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .description {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 13px;
+            resize: vertical;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #0969da;
+            box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
+        }
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #238636;
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: #2ea043;
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background: #6e7781;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #57606a;
+        }
+        .api-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        .api-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .api-input input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .result-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 13px;
+        }
+        .result-item.success {
+            border-left: 4px solid #238636;
+        }
+        .result-item.error {
+            border-left: 4px solid #da3633;
+        }
+        .result-input {
+            color: #555;
+        }
+        .result-output {
+            color: #238636;
+            flex: 1;
+            margin-left: 20px;
+        }
+        .result-error {
+            color: #da3633;
+        }
+        .copy-btn {
+            padding: 4px 10px;
+            font-size: 12px;
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .copy-btn:hover {
+            background: #e0e0e0;
+        }
+        .copy-btn.copied {
+            background: #238636;
+            color: white;
+            border-color: #238636;
+        }
+        .progress {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #238636;
+            transition: width 0.3s;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .stat {
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border-radius: 6px;
+        }
+        .stat-label {
+            font-weight: 600;
+            color: #666;
+        }
+        .stat-value {
+            color: #333;
+            margin-left: 5px;
+        }
+        .copy-all-btn {
+            width: 100%;
+            padding: 12px;
+            background: #0969da;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        .copy-all-btn:hover {
+            background: #0860c9;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #777;
+        }
+        .footer a {
+            color: #0969da;
+            text-decoration: none;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #238636;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hint {
+            font-size: 12px;
+            color: #777;
+            margin-top: 5px;
+        }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .checkbox-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .checkbox-row label {
+            display: inline;
+            font-weight: normal;
+            margin: 0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>GitHub Actions Tag &rarr; SHA Converter</h1>
+    <p class="description">Convert GitHub Actions references from tagged format to commit SHA format for reproducibility. Optionally expands to full version tags.</p>
+
+    <div class="card">
+        <label for="input">Input Actions (one per line)</label>
+        <textarea id="input" placeholder="actions/checkout@v4
+actions/setup-python@v5
+actions/upload-artifact@v4"></textarea>
+        <p class="hint">Example formats: <code>actions/checkout@v4</code> (expands to v4.2.2), <code>actions/checkout@v4.2</code> (expands to v4.2.2), or <code>actions/checkout@v4.1.0</code> (exact)</p>
+
+        <div class="api-section">
+            <label for="token">GitHub Personal Access Token (optional)</label>
+            <div class="api-input">
+                <input type="password" id="token" placeholder="ghp_... (increases rate limits to 5000/hour)">
+                <button class="btn-secondary" id="saveToken">Save</button>
+            </div>
+            <p class="hint">Without token: 60 requests/hour. With token: 5000 requests/hour. Stored locally in your browser.</p>
+        </div>
+
+        <div class="checkbox-row">
+            <input type="checkbox" id="expandVersion" checked>
+            <label for="expandVersion">Expand tags to full version (e.g., v4 &rarr; v4.2.2, v4.2 &rarr; v4.2.2)</label>
+        </div>
+
+        <div class="button-row">
+            <button class="btn-primary" id="convert">Convert to SHA</button>
+            <button class="btn-secondary" id="clear">Clear</button>
+        </div>
+    </div>
+
+    <div id="results" class="results"></div>
+
+    <div class="footer">
+        Built with vanilla HTML/JS. No build step required.
+        <br>
+        <a href="https://docs.github.com/en/rest/reference/git#get-a-reference">GitHub API Docs</a>
+    </div>
+
+    <script>
+        const input = document.getElementById('input');
+        const tokenInput = document.getElementById('token');
+        const expandVersionCheckbox = document.getElementById('expandVersion');
+        const convertBtn = document.getElementById('convert');
+        const clearBtn = document.getElementById('clear');
+        const saveTokenBtn = document.getElementById('saveToken');
+        const resultsDiv = document.getElementById('results');
+
+        // Load saved token
+        const savedToken = localStorage.getItem('github_token');
+        if (savedToken) {
+            tokenInput.value = savedToken;
+        }
+
+        // Load saved checkbox state
+        const savedExpandVersion = localStorage.getItem('expand_version');
+        if (savedExpandVersion !== null) {
+            expandVersionCheckbox.checked = savedExpandVersion === 'true';
+        }
+
+        // Parse action reference
+        function parseActionRef(line) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('#')) return null;
+
+            const match = trimmed.match(/^([^/@]+)\/([^/@]+)@(.+)$/);
+            if (!match) return null;
+
+            return {
+                owner: match[1],
+                repo: match[2],
+                tag: match[3],
+                original: trimmed
+            };
+        }
+
+        // Get commit SHA for a tag using GitHub API
+        async function getCommitSHA(owner, repo, tag, token) {
+            const headers = {
+                'Accept': 'application/vnd.github.v3+json',
+                'X-GitHub-Api-Version': '2022-11-28'
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            // Try to get the tag reference directly
+            const response = await fetch(
+                `https://api.github.com/repos/${owner}/${repo}/git/refs/tags/${tag}`,
+                { headers }
+            );
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || response.statusText);
+            }
+
+            const data = await response.json();
+
+            // The ref data contains the object SHA
+            // For annotated tags, we need to dereference to get the commit SHA
+            if (data.object.type === 'tag') {
+                // Get the tag object to find the commit it points to
+                const tagResponse = await fetch(data.object.url, { headers });
+                if (tagResponse.ok) {
+                    const tagData = await tagResponse.json();
+                    return tagData.object.sha;
+                }
+            }
+
+            return data.object.sha;
+        }
+
+        // Parse semver string (e.g., "v4.2.1" -> {major: 4, minor: 2, patch: 1})
+        function parseSemver(tag) {
+            const match = tag.match(/^v?(\d+)\.?(\d+)?\.?(\d+)?/);
+            if (!match) return null;
+
+            return {
+                major: parseInt(match[1]) || 0,
+                minor: parseInt(match[2]) || 0,
+                patch: parseInt(match[3]) || 0,
+                original: tag
+            };
+        }
+
+        // Compare two semver objects, returns positive if a > b, negative if a < b
+        function compareSemver(a, b) {
+            if (a.major !== b.major) return a.major - b.major;
+            if (a.minor !== b.minor) return a.minor - b.minor;
+            return a.patch - b.patch;
+        }
+
+        // Get full version tag by fetching all tags and finding highest matching version
+        async function getFullVersionTag(owner, repo, tag, token) {
+            const headers = {
+                'Accept': 'application/vnd.github.v3+json',
+                'X-GitHub-Api-Version': '2022-11-28'
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            // Parse the input tag to understand what we're looking for
+            const inputSemver = parseSemver(tag);
+            if (!inputSemver) {
+                // Not a semver tag, return as-is
+                return tag;
+            }
+
+            // Determine the prefix for matching
+            // v4 -> v4.
+            // v4.2 -> v4.2.
+            // v4.2.1 -> v4.2.1 (exact match)
+            let prefix;
+            if (tag.includes('.')) {
+                const parts = tag.split('.');
+                if (parts.length === 2) {
+                    // v4.2 -> look for v4.2.x
+                    prefix = tag + '.';
+                } else {
+                    // v4.2.1 -> exact match
+                    return tag;
+                }
+            } else {
+                // v4 -> look for v4.x.x
+                prefix = tag + '.';
+            }
+
+            // Fetch all tags for the repository
+            let allTags = [];
+            let page = 1;
+            const perPage = 100;
+
+            while (true) {
+                const response = await fetch(
+                    `https://api.github.com/repos/${owner}/${repo}/tags?per_page=${perPage}&page=${page}`,
+                    { headers }
+                );
+
+                if (!response.ok) {
+                    // If we can't fetch tags, return original
+                    return tag;
+                }
+
+                const tags = await response.json();
+                if (tags.length === 0) break;
+
+                allTags = allTags.concat(tags.map(t => t.name));
+
+                if (tags.length < perPage) break;
+                page++;
+            }
+
+            // Filter tags that start with our prefix
+            const matchingTags = allTags.filter(t => t.startsWith(prefix));
+
+            if (matchingTags.length === 0) {
+                // No matching tags found, return original
+                return tag;
+            }
+
+            // Parse all matching tags and find the highest version
+            const parsedTags = matchingTags
+                .map(parseSemver)
+                .filter(t => t !== null);
+
+            if (parsedTags.length === 0) {
+                return tag;
+            }
+
+            // Sort by semver descending and take the first one
+            parsedTags.sort((a, b) => compareSemver(b, a));
+
+            return parsedTags[0].original;
+        }
+
+        // Convert a single action
+        async function convertAction(action, token) {
+            const { owner, repo, tag, original } = action;
+
+            try {
+                // Determine which version tag to use for SHA lookup
+                let versionTag = tag;
+                if (expandVersionCheckbox.checked) {
+                    versionTag = await getFullVersionTag(owner, repo, tag, token);
+                }
+
+                // Get SHA for the resolved version tag
+                const sha = await getCommitSHA(owner, repo, versionTag, token);
+
+                return {
+                    success: true,
+                    input: original,
+                    output: `${owner}/${repo}@${sha} # ${versionTag}`
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    input: original,
+                    error: error.message
+                };
+            }
+        }
+
+        // Display results
+        function renderResults(results) {
+            const successCount = results.filter(r => r.success).length;
+            const errorCount = results.filter(r => !r.success).length;
+
+            let html = '';
+
+            if (successCount > 0 || errorCount > 0) {
+                html += '<div class="stats">';
+                html += `<span class="stat"><span class="stat-label">Success:</span><span class="stat-value">${successCount}</span></span>`;
+                html += `<span class="stat"><span class="stat-label">Errors:</span><span class="stat-value">${errorCount}</span></span>`;
+                html += '</div>';
+            }
+
+            results.forEach((result, index) => {
+                if (result.success) {
+                    html += `
+                        <div class="result-item success">
+                            <span class="result-input">${escapeHtml(result.input)}</span>
+                            <span class="result-output">${escapeHtml(result.output)}</span>
+                            <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(result.output)}', this)">Copy</button>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="result-item error">
+                            <span class="result-input">${escapeHtml(result.input)}</span>
+                            <span class="result-error">${escapeHtml(result.error)}</span>
+                        </div>
+                    `;
+                }
+            });
+
+            if (successCount > 0) {
+                const outputs = results.filter(r => r.success).map(r => r.output).join('\n');
+                html += `<button class="copy-all-btn" onclick="copyToClipboard('${escapeHtml(outputs)}', this)">Copy All Results</button>`;
+            }
+
+            resultsDiv.innerHTML = html;
+        }
+
+        // Show progress
+        function showProgress(current, total) {
+            const percentage = Math.round((current / total) * 100);
+            resultsDiv.innerHTML = `
+                <div class="card progress">
+                    <span class="spinner"></span>
+                    Converting... (${current}/${total})
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${percentage}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/'/g, "\\'");
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Convert button handler
+        convertBtn.addEventListener('click', async () => {
+            const lines = input.value.split('\n');
+            const actions = lines.map(parseActionRef).filter(a => a !== null);
+
+            if (actions.length === 0) {
+                resultsDiv.innerHTML = '<div class="card"><p style="color: #da3633;">No valid action references found. Use format: owner/repo@tag</p></div>';
+                return;
+            }
+
+            const token = tokenInput.value.trim();
+            const results = [];
+
+            convertBtn.disabled = true;
+            convertBtn.textContent = 'Converting...';
+
+            // Convert actions with rate limiting consideration
+            for (let i = 0; i < actions.length; i++) {
+                showProgress(i + 1, actions.length);
+                const result = await convertAction(actions[i], token);
+                results.push(result);
+
+                // Small delay to avoid rate limiting (without token)
+                if (!token && i < actions.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+
+            renderResults(results);
+            convertBtn.disabled = false;
+            convertBtn.textContent = 'Convert to SHA';
+        });
+
+        // Clear button handler
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            resultsDiv.innerHTML = '';
+        });
+
+        // Save token button handler
+        saveTokenBtn.addEventListener('click', () => {
+            const token = tokenInput.value.trim();
+            if (token) {
+                localStorage.setItem('github_token', token);
+                saveTokenBtn.textContent = 'Saved!';
+                setTimeout(() => {
+                    saveTokenBtn.textContent = 'Save';
+                }, 2000);
+            } else {
+                localStorage.removeItem('github_token');
+                saveTokenBtn.textContent = 'Cleared!';
+                setTimeout(() => {
+                    saveTokenBtn.textContent = 'Save';
+                }, 2000);
+            }
+        });
+
+        // Auto-convert on paste
+        input.addEventListener('paste', () => {
+            setTimeout(() => {
+                const lines = input.value.split('\n');
+                const actions = lines.map(parseActionRef).filter(a => a !== null);
+                if (actions.length > 0 && actions.every(a => a !== null)) {
+                    convertBtn.click();
+                }
+            }, 10);
+        });
+
+        // Save checkbox state on change
+        expandVersionCheckbox.addEventListener('change', () => {
+            localStorage.setItem('expand_version', expandVersionCheckbox.checked);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>List Rearranger</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        h1 {
+            margin: 0 0 20px 0;
+            color: #333;
+        }
+
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section h2 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #555;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #0b7dda;
+            transform: translateY(-1px);
+        }
+
+        .btn-clear {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background: #da190b;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        #draggable-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .list-item {
+            background: #fafafa;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            cursor: grab;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+
+        .list-item:hover {
+            border-color: #bbb;
+            background: #fff;
+        }
+
+        .list-item.dragging {
+            opacity: 0.5;
+            border-color: #4CAF50;
+            background: #e8f5e9;
+        }
+
+        .list-item.drag-over {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+        }
+
+        .drag-handle {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 20px;
+        }
+
+        .item-text {
+            flex: 1;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+
+        .item-number {
+            flex-shrink: 0;
+            background: #4CAF50;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        #list-container {
+            display: none;
+        }
+
+        #list-container.active {
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .section {
+                padding: 15px;
+            }
+
+            .button-row {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .list-item {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+        }
+
+        .copy-button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>List Rearranger</h1>
+
+    <div class="section">
+        <h2>1. Enter Your List</h2>
+        <textarea id="input-text" placeholder="Enter your list items here (one per line)...
+
+Example:
+Item 1
+Item 2
+Item 3"></textarea>
+        <div class="button-row">
+            <button class="btn-primary" onclick="createList()">Create Draggable List</button>
+            <button class="btn-clear" onclick="clearInput()">Clear</button>
+        </div>
+    </div>
+
+    <div class="section" id="list-container">
+        <h2>2. Drag to Reorder</h2>
+        <p style="color: #666; margin: 0 0 15px 0;">Drag items up or down to reorder. Works with touch on mobile!</p>
+        <ul id="draggable-list"></ul>
+        <div class="button-row">
+            <button class="btn-secondary" onclick="exportList()">Export Reordered List</button>
+            <button class="btn-clear" onclick="goBack()">Go Back</button>
+        </div>
+    </div>
+
+    <div class="section" id="output-container" style="display: none;">
+        <h2>3. Reordered List</h2>
+        <textarea id="output-text" readonly></textarea>
+        <div class="button-row">
+            <button class="btn-primary" onclick="copyToClipboard()">Copy to Clipboard</button>
+            <button class="btn-secondary" onclick="startOver()">Start Over</button>
+        </div>
+    </div>
+
+    <script>
+        let draggedItem = null;
+        let touchStartY = 0;
+        let touchStartX = 0;
+        let touchMoved = false;
+        let originalIndex = 0;
+
+        function createList() {
+            const input = document.getElementById('input-text').value;
+            const lines = input.split('\n').filter(line => line.trim() !== '');
+
+            if (lines.length === 0) {
+                alert('Please enter at least one line');
+                return;
+            }
+
+            const listContainer = document.getElementById('draggable-list');
+            listContainer.innerHTML = '';
+
+            lines.forEach((line, index) => {
+                const li = createListItem(line, index);
+                listContainer.appendChild(li);
+            });
+
+            document.getElementById('list-container').classList.add('active');
+            document.getElementById('output-container').style.display = 'none';
+        }
+
+        function createListItem(text, index) {
+            const li = document.createElement('li');
+            li.className = 'list-item';
+            li.draggable = true;
+            li.dataset.index = index;
+
+            li.innerHTML = `
+                <span class="drag-handle">⋮⋮</span>
+                <span class="item-number">${index + 1}</span>
+                <span class="item-text">${escapeHtml(text)}</span>
+            `;
+
+            // Desktop drag events
+            li.addEventListener('dragstart', handleDragStart);
+            li.addEventListener('dragend', handleDragEnd);
+            li.addEventListener('dragover', handleDragOver);
+            li.addEventListener('dragleave', handleDragLeave);
+            li.addEventListener('drop', handleDrop);
+
+            // Mobile touch events
+            li.addEventListener('touchstart', handleTouchStart, { passive: false });
+            li.addEventListener('touchmove', handleTouchMove, { passive: false });
+            li.addEventListener('touchend', handleTouchEnd);
+
+            return li;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Desktop drag handlers
+        function handleDragStart(e) {
+            draggedItem = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.innerHTML);
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.list-item').forEach(item => {
+                item.classList.remove('drag-over');
+            });
+            updateNumbers();
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            this.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (draggedItem !== this) {
+                const list = document.getElementById('draggable-list');
+                const allItems = [...list.children];
+                const draggedIndex = allItems.indexOf(draggedItem);
+                const targetIndex = allItems.indexOf(this);
+
+                if (draggedIndex < targetIndex) {
+                    this.parentNode.insertBefore(draggedItem, this.nextSibling);
+                } else {
+                    this.parentNode.insertBefore(draggedItem, this);
+                }
+            }
+
+            this.classList.remove('drag-over');
+            return false;
+        }
+
+        // Mobile touch handlers
+        function handleTouchStart(e) {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                touchStartY = touch.clientY;
+                touchStartX = touch.clientX;
+                touchMoved = false;
+                draggedItem = this;
+                originalIndex = [...document.getElementById('draggable-list').children].indexOf(this);
+                this.classList.add('dragging');
+            }
+        }
+
+        function handleTouchMove(e) {
+            if (!draggedItem) return;
+
+            const touch = e.touches[0];
+            const deltaY = Math.abs(touch.clientY - touchStartY);
+            const deltaX = Math.abs(touch.clientX - touchStartX);
+
+            if (deltaY > 10 && deltaY > deltaX) {
+                touchMoved = true;
+                e.preventDefault();
+
+                const list = document.getElementById('draggable-list');
+                const items = [...list.children];
+                const touchY = touch.clientY;
+
+                items.forEach((item, index) => {
+                    if (item === draggedItem) return;
+
+                    const rect = item.getBoundingClientRect();
+                    const itemMiddle = rect.top + rect.height / 2;
+
+                    if (touchY < itemMiddle && index < items.indexOf(draggedItem)) {
+                        item.parentNode.insertBefore(draggedItem, item);
+                    } else if (touchY > itemMiddle && index > items.indexOf(draggedItem)) {
+                        item.parentNode.insertBefore(draggedItem, item.nextSibling);
+                    }
+                });
+
+                updateNumbers();
+            }
+        }
+
+        function handleTouchEnd(e) {
+            if (draggedItem) {
+                draggedItem.classList.remove('dragging');
+                document.querySelectorAll('.list-item').forEach(item => {
+                    item.classList.remove('drag-over');
+                });
+                updateNumbers();
+                draggedItem = null;
+            }
+        }
+
+        function updateNumbers() {
+            const items = document.querySelectorAll('.list-item');
+            items.forEach((item, index) => {
+                const numberEl = item.querySelector('.item-number');
+                if (numberEl) {
+                    numberEl.textContent = index + 1;
+                }
+            });
+        }
+
+        function exportList() {
+            const listContainer = document.getElementById('draggable-list');
+            const items = listContainer.querySelectorAll('.item-text');
+            const lines = Array.from(items).map(item => item.textContent);
+
+            document.getElementById('output-text').value = lines.join('\n');
+            document.getElementById('output-container').style.display = 'block';
+            document.getElementById('list-container').classList.remove('active');
+            document.getElementById('output-container').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyToClipboard() {
+            const output = document.getElementById('output-text');
+            output.select();
+            document.execCommand('copy');
+
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        }
+
+        function clearInput() {
+            document.getElementById('input-text').value = '';
+        }
+
+        function goBack() {
+            document.getElementById('list-container').classList.remove('active');
+            document.getElementById('output-container').style.display = 'none';
+        }
+
+        function startOver() {
+            document.getElementById('input-text').value = '';
+            document.getElementById('list-container').classList.remove('active');
+            document.getElementById('output-container').style.display = 'none';
+            document.getElementById('draggable-list').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
