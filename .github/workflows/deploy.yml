@@ -1,6 +1,3 @@
-# Deploy HTML files to GitHub Pages
-# Uses latest SHAs from https://acidghost.github.io/actions-latest/versions-sha.txt
-
 name: Deploy to GitHub Pages
 
 on:
@@ -15,7 +12,7 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
