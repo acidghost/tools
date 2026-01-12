@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Tools Collection</title>
+    <style>
+        :root {
+            --bg: #f8f9fa;
+            --text: #212529;
+            --link: #0066cc;
+            --link-hover: #004499;
+            --border: #dee2e6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: #6c757d;
+            margin: 0;
+        }
+
+        .tool-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .tool-item {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .tool-item:hover {
+            border-color: #adb5bd;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .tool-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .tool-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--link);
+        }
+
+        .tool-item:hover .tool-title {
+            color: var(--link-hover);
+        }
+
+        .tool-item p {
+            margin: 0.5rem 0 0 0;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        footer {
+            margin-top: 3rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        footer a {
+            color: var(--link);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>HTML Tools</h1>
+        <p class="subtitle">Single-file web applications. No build step, no dependencies.</p>
+    </header>
+
+    <main>
+        <ul class="tool-list">
+<!-- TOOLS_LIST -->
+        </ul>
+    </main>
+
+    <footer>
+        <p>Tools follow <a href="https://simonwillison.net/2025/Dec/10/html-tools/" target="_blank" rel="noopener">Simon Willison's patterns</a> for building client-side web applications.</p>
+        <p><a href="https://github.com/acidghost/tools">View on GitHub</a></p>
+    </footer>
+</body>
+</html>

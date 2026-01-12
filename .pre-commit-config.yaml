@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: generate-index
+        name: Generate index.html
+        entry: python3 update_index.py
+        language: system
+        pass_filenames: false
+        always_run: true
