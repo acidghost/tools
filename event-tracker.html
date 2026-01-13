@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Track events with timed intervals. Works offline as a PWA with automatic data persistence.">
+    <meta name="theme-color" content="#0066cc">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Event Tracker</title>
+    <link rel="manifest" id="manifest-placeholder">
+    <style>
+        :root {
+            --bg: #f8f9fa;
+            --text: #212529;
+            --link: #0066cc;
+            --link-hover: #004499;
+            --border: #dee2e6;
+            --card-bg: #ffffff;
+            --danger: #dc3545;
+            --danger-hover: #bb2d3b;
+            --success: #198754;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: var(--link);
+        }
+
+        section {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            color: var(--text);
+        }
+
+        h3 {
+            margin-top: 0;
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        /* Timer Section */
+        .timer-section {
+            text-align: center;
+        }
+
+        .continuous-mode {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--link);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px var(--link);
+        }
+
+        .timer-display {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
+            font-size: 3rem;
+            font-variant-numeric: tabular-nums;
+            font-weight: 300;
+            margin: 1rem 0;
+            color: var(--text);
+        }
+
+        .timer-display.running {
+            color: var(--success);
+        }
+
+        /* Comment Section */
+        .comment-section textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .comment-section textarea:focus {
+            outline: none;
+            border-color: var(--link);
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        /* Buttons */
+        button {
+            font-family: inherit;
+            font-size: 1rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: var(--link);
+            color: white;
+            width: 100%;
+            font-size: 1.25rem;
+            padding: 1rem;
+        }
+
+        .btn-primary:hover {
+            background: var(--link-hover);
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            width: 100%;
+        }
+
+        .btn-secondary:hover {
+            background: #5c636a;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-hover);
+        }
+
+        /* Events List */
+        .events-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            margin: 1rem 0;
+        }
+
+        .event-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            animation: slideIn 0.3s ease;
+        }
+
+        .event-item:last-child {
+            border-bottom: none;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .event-time {
+            font-weight: 500;
+            color: var(--link);
+        }
+
+        .event-duration {
+            font-family: 'SF Mono', 'Monaco', monospace;
+            background: #e9ecef;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+
+        .event-comment {
+            color: #495057;
+            font-style: italic;
+        }
+
+        .event-comment:empty {
+            display: none;
+        }
+
+        .event-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .event-actions button {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+            border-radius: 4px;
+        }
+
+        .btn-edit {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #5c636a;
+        }
+
+        .btn-delete {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: var(--danger-hover);
+        }
+
+        .btn-save {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #157347;
+        }
+
+        /* Copy Section */
+        .format-options {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .format-options label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .format-options input[type="radio"] {
+            cursor: pointer;
+        }
+
+        /* Reset Section */
+        .reset-section {
+            text-align: center;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.875rem;
+            margin-top: 2rem;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .modal h3 {
+            margin-top: 0;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+        }
+
+        .modal textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: vertical;
+            margin-top: 1rem;
+        }
+
+        .modal textarea:focus {
+            outline: none;
+            border-color: var(--link);
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #333;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1001;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .timer-display {
+                font-size: 2.5rem;
+            }
+
+            section {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Event Tracker</h1>
+        </header>
+
+        <!-- Timer Section -->
+        <section class="timer-section">
+            <div id="timerDisplay" class="timer-display">00:00:00</div>
+            <button id="toggleTimer" class="btn-primary">Start Timer</button>
+            <div class="continuous-mode">
+                <label class="switch">
+                    <input type="checkbox" id="continuousMode">
+                    <span class="slider"></span>
+                </label>
+                <span>Continuous mode (auto-restart)</span>
+            </div>
+        </section>
+
+        <!-- Comment Section -->
+        <section class="comment-section">
+            <textarea id="comment" rows="3" placeholder="Add a note (optional)..."></textarea>
+        </section>
+
+        <!-- Events Log -->
+        <section class="events-section">
+            <h2>Events Log</h2>
+            <div id="eventsList" class="events-list">
+                <p class="empty-state">No events yet. Start the timer to track your first event.</p>
+            </div>
+        </section>
+
+        <!-- Copy Section -->
+        <section class="copy-section">
+            <h3>Copy Events</h3>
+            <div class="format-options">
+                <label><input type="radio" name="format" value="text" checked> Plain text</label>
+                <label><input type="radio" name="format" value="csv"> CSV</label>
+                <label><input type="radio" name="format" value="json"> JSON</label>
+            </div>
+            <button id="copyBtn" class="btn-secondary">Copy to Clipboard</button>
+        </section>
+
+        <!-- Reset Section -->
+        <section class="reset-section">
+            <button id="resetBtn" class="btn-danger">Reset Everything</button>
+        </section>
+
+        <footer>
+            <p>PWA-enabled • Works offline • Data persists locally</p>
+        </footer>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="modal-overlay">
+        <div class="modal">
+            <h3>Reset Everything?</h3>
+            <p>This will delete all events permanently. This action cannot be undone.</p>
+            <div class="modal-buttons">
+                <button id="cancelReset" class="btn-secondary">Cancel</button>
+                <button id="confirmReset" class="btn-danger">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Comment Modal -->
+    <div id="editModal" class="modal-overlay">
+        <div class="modal">
+            <h3>Edit Comment</h3>
+            <textarea id="editCommentText" rows="4" placeholder="Edit your note..."></textarea>
+            <div class="modal-buttons">
+                <button id="cancelEdit" class="btn-secondary">Cancel</button>
+                <button id="saveEdit" class="btn-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Copied!</div>
+
+    <script>
+        // State
+        let timerInterval = null;
+        let startTime = null;
+        let isRunning = false;
+        let events = [];
+        let editingEventId = null;
+        let continuousMode = false;
+
+        // DOM Elements
+        const timerDisplay = document.getElementById('timerDisplay');
+        const toggleTimerBtn = document.getElementById('toggleTimer');
+        const continuousModeToggle = document.getElementById('continuousMode');
+        const commentInput = document.getElementById('comment');
+        const eventsList = document.getElementById('eventsList');
+        const copyBtn = document.getElementById('copyBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const confirmModal = document.getElementById('confirmModal');
+        const cancelResetBtn = document.getElementById('cancelReset');
+        const confirmResetBtn = document.getElementById('confirmReset');
+        const editModal = document.getElementById('editModal');
+        const editCommentText = document.getElementById('editCommentText');
+        const cancelEditBtn = document.getElementById('cancelEdit');
+        const saveEditBtn = document.getElementById('saveEdit');
+        const toast = document.getElementById('toast');
+
+        // Initialize
+        function init() {
+            loadEvents();
+            loadContinuousMode();
+            renderEvents();
+            setupPWA();
+        }
+
+        // Timer Functions
+        function toggleTimer() {
+            if (isRunning) {
+                stopTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        function startTimer() {
+            isRunning = true;
+            startTime = Date.now();
+            toggleTimerBtn.textContent = 'Stop Timer';
+            timerDisplay.classList.add('running');
+            timerInterval = setInterval(updateTimerDisplay, 1000);
+            updateTimerDisplay();
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            const endTime = Date.now();
+            const duration = Math.floor((endTime - startTime) / 1000);
+            const comment = commentInput.value.trim();
+
+            // Save event
+            const event = {
+                id: Date.now(),
+                timestamp: new Date().toISOString(),
+                duration: duration,
+                comment: comment
+            };
+
+            events.unshift(event);
+            saveEvents();
+            renderEvents();
+
+            // Clear comment
+            commentInput.value = '';
+
+            // Handle continuous mode
+            if (continuousMode) {
+                // Immediately start next timer
+                startTimer();
+            } else {
+                // Reset state
+                isRunning = false;
+                startTime = null;
+                toggleTimerBtn.textContent = 'Start Timer';
+                timerDisplay.classList.remove('running');
+                timerDisplay.textContent = '00:00:00';
+            }
+        }
+
+        // Continuous Mode
+        function loadContinuousMode() {
+            const saved = localStorage.getItem('eventTracker_continuousMode');
+            if (saved !== null) {
+                continuousMode = saved === 'true';
+                continuousModeToggle.checked = continuousMode;
+            }
+        }
+
+        function saveContinuousMode() {
+            localStorage.setItem('eventTracker_continuousMode', continuousMode);
+        }
+
+        function toggleContinuousMode() {
+            continuousMode = continuousModeToggle.checked;
+            saveContinuousMode();
+
+            // Update button text if timer is not running
+            if (!isRunning) {
+                toggleTimerBtn.textContent = continuousMode ? 'Start Timer' : 'Start Timer';
+            }
+        }
+
+        function updateTimerDisplay() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            timerDisplay.textContent = formatTime(elapsed);
+        }
+
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function formatDuration(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+
+            if (h > 0) {
+                return `${h}h${m}m${s}s`;
+            } else if (m > 0) {
+                return `${m}m${s}s`;
+            } else {
+                return `${s}s`;
+            }
+        }
+
+        // Event Management
+        function loadEvents() {
+            const stored = localStorage.getItem('eventTracker_events');
+            if (stored) {
+                try {
+                    events = JSON.parse(stored);
+                } catch (e) {
+                    console.error('Failed to load events:', e);
+                    events = [];
+                }
+            }
+        }
+
+        function saveEvents() {
+            localStorage.setItem('eventTracker_events', JSON.stringify(events));
+        }
+
+        function renderEvents() {
+            if (events.length === 0) {
+                eventsList.innerHTML = '<p class="empty-state">No events yet. Start the timer to track your first event.</p>';
+                return;
+            }
+
+            eventsList.innerHTML = events.map(event => {
+                const date = new Date(event.timestamp);
+                const timeStr = date.toLocaleString();
+                return `
+                    <div class="event-item" data-event-id="${event.id}">
+                        <div class="event-header">
+                            <span class="event-time">${timeStr}</span>
+                            <span class="event-duration">${formatDuration(event.duration)}</span>
+                        </div>
+                        ${event.comment ? `<div class="event-comment">${escapeHtml(event.comment)}</div>` : ''}
+                        <div class="event-actions">
+                            <button class="btn-edit" onclick="editEventComment(${event.id})">Edit</button>
+                            <button class="btn-delete" onclick="deleteEvent(${event.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Copy Functionality
+        function copyEvents() {
+            const format = document.querySelector('input[name="format"]:checked').value;
+
+            if (events.length === 0) {
+                showToast('No events to copy');
+                return;
+            }
+
+            let content = '';
+
+            switch (format) {
+                case 'text':
+                    content = formatAsText();
+                    break;
+                case 'csv':
+                    content = formatAsCSV();
+                    break;
+                case 'json':
+                    content = formatAsJSON();
+                    break;
+            }
+
+            navigator.clipboard.writeText(content).then(() => {
+                showToast('Copied!');
+            }).catch(() => {
+                showToast('Failed to copy');
+            });
+        }
+
+        function formatAsText() {
+            return events.map(event => {
+                const date = new Date(event.timestamp);
+                const timeStr = date.toLocaleString();
+                const comment = event.comment ? ` - ${event.comment}` : '';
+                return `${timeStr} - ${formatDuration(event.duration)}${comment}`;
+            }).join('\n');
+        }
+
+        function formatAsCSV() {
+            const header = 'timestamp,duration,comment\n';
+            const rows = events.map(event => {
+                const comment = event.comment ? `"${event.comment.replace(/"/g, '""')}"` : '';
+                return `${event.timestamp},${event.duration},${comment}`;
+            }).join('\n');
+            return header + rows;
+        }
+
+        function formatAsJSON() {
+            return JSON.stringify(events, null, 2);
+        }
+
+        // Reset Functionality
+        function showResetModal() {
+            confirmModal.classList.add('active');
+        }
+
+        function hideResetModal() {
+            confirmModal.classList.remove('active');
+        }
+
+        function resetEverything() {
+            events = [];
+            saveEvents();
+            renderEvents();
+            hideResetModal();
+            showToast('Reset complete');
+        }
+
+        // Delete Event
+        function deleteEvent(eventId) {
+            events = events.filter(e => e.id !== eventId);
+            saveEvents();
+            renderEvents();
+            showToast('Event deleted');
+        }
+
+        // Edit Comment
+        function editEventComment(eventId) {
+            const event = events.find(e => e.id === eventId);
+            if (!event) return;
+
+            editingEventId = eventId;
+            editCommentText.value = event.comment || '';
+            editModal.classList.add('active');
+            editCommentText.focus();
+        }
+
+        function saveEditComment() {
+            if (editingEventId === null) return;
+
+            const event = events.find(e => e.id === editingEventId);
+            if (event) {
+                event.comment = editCommentText.value.trim();
+                saveEvents();
+                renderEvents();
+                showToast('Comment updated');
+            }
+
+            hideEditModal();
+        }
+
+        function hideEditModal() {
+            editModal.classList.remove('active');
+            editingEventId = null;
+            editCommentText.value = '';
+        }
+
+        // Toast
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // PWA Setup
+        function setupPWA() {
+            // Inline manifest
+            const manifest = {
+                name: "Event Tracker",
+                short_name: "Events",
+                start_url: ".",
+                display: "standalone",
+                background_color: "#f8f9fa",
+                theme_color: "#0066cc",
+                icons: [{
+                    src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏱️</text></svg>",
+                    sizes: "192x192",
+                    type: "image/svg+xml"
+                }]
+            };
+
+            const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+            const manifestUrl = URL.createObjectURL(manifestBlob);
+            document.getElementById('manifest-placeholder').href = manifestUrl;
+
+            // Service Worker (best effort - may not work in all browsers)
+            if ('serviceWorker' in navigator) {
+                try {
+                    const swCode = `
+                        const CACHE_NAME = 'event-tracker-v1';
+                        self.addEventListener('install', e => {
+                            e.waitUntil(
+                                caches.open(CACHE_NAME).then(cache =>
+                                    cache.addAll(['./', location.href])
+                                )
+                            );
+                        });
+                        self.addEventListener('fetch', e => {
+                            e.respondWith(
+                                caches.match(e.request).then(r => r || fetch(e.request))
+                            );
+                        });
+                    `;
+                    const swBlob = new Blob([swCode], {type: 'application/javascript'});
+                    const swUrl = URL.createObjectURL(swBlob);
+                    navigator.serviceWorker.register(swUrl).catch(() => {
+                        // Graceful degradation - app still works online
+                        console.log('Service worker registration failed (inline SW may be restricted)');
+                    });
+                } catch (e) {
+                    console.log('Service worker setup failed:', e);
+                }
+            }
+        }
+
+        // Event Listeners
+        toggleTimerBtn.addEventListener('click', toggleTimer);
+        continuousModeToggle.addEventListener('change', toggleContinuousMode);
+        copyBtn.addEventListener('click', copyEvents);
+        resetBtn.addEventListener('click', showResetModal);
+        cancelResetBtn.addEventListener('click', hideResetModal);
+        confirmResetBtn.addEventListener('click', resetEverything);
+        cancelEditBtn.addEventListener('click', hideEditModal);
+        saveEditBtn.addEventListener('click', saveEditComment);
+
+        // Close modals on overlay click
+        confirmModal.addEventListener('click', (e) => {
+            if (e.target === confirmModal) {
+                hideResetModal();
+            }
+        });
+
+        editModal.addEventListener('click', (e) => {
+            if (e.target === editModal) {
+                hideEditModal();
+            }
+        });
+
+        // Keyboard shortcuts for edit modal
+        editCommentText.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideEditModal();
+            } else if (e.key === 'Enter' && e.ctrlKey) {
+                saveEditComment();
+            }
+        });
+
+        // Keyboard shortcut: Space to toggle timer
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && document.activeElement.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                toggleTimer();
+            }
+        });
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
