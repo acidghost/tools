@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Tap to measure BPM (beats per minute). Works with mouse, touch, or spacebar. Auto-resets after 2.5 seconds.">
+    <title>BPM Counter</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        h1 {
+            margin: 0 0 30px;
+            color: #333;
+            font-size: 1.8rem;
+        }
+        .bpm-display {
+            font-size: 5rem;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+            color: #f5576c;
+            margin: 30px 0;
+            letter-spacing: -2px;
+            transition: transform 0.1s;
+        }
+        .bpm-display.pulse {
+            transform: scale(1.05);
+        }
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #999;
+            margin-top: 4px;
+        }
+        .tap-button {
+            width: 100%;
+            padding: 25px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            transition: all 0.15s;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .tap-button:hover:not(:active) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.5);
+        }
+        .tap-button:active {
+            transform: scale(0.98);
+        }
+        .reset-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            border: none;
+            border-radius: 10px;
+            background: #e0e0e0;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .reset-button:hover {
+            background: #d0d0d0;
+        }
+        .instructions {
+            margin-top: 25px;
+            color: #999;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>BPM Counter</h1>
+
+        <div class="bpm-display" id="bpmDisplay">--</div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-value" id="tapCount">0</span>
+                <span class="stat-label">Taps</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="avgInterval">--</span>
+                <span class="stat-label">ms</span>
+            </div>
+        </div>
+
+        <button class="tap-button" id="tapButton">TAP HERE</button>
+        <button class="reset-button" id="resetButton">Reset</button>
+
+        <p class="instructions">
+            Tap the button or press spacebar to count beats.<br>
+            Auto-resets after 2.5 seconds of inactivity.
+        </p>
+    </div>
+
+    <script>
+        const taps = [];
+        const maxTaps = 8;
+        const resetTimeout = 2500;
+        let resetTimer = null;
+
+        const bpmDisplay = document.getElementById('bpmDisplay');
+        const tapCountDisplay = document.getElementById('tapCount');
+        const avgIntervalDisplay = document.getElementById('avgInterval');
+        const tapButton = document.getElementById('tapButton');
+        const resetButton = document.getElementById('resetButton');
+
+        function recordTap() {
+            const now = Date.now();
+            taps.push(now);
+
+            if (taps.length > maxTaps) {
+                taps.shift();
+            }
+
+            clearTimeout(resetTimer);
+            resetTimer = setTimeout(reset, resetTimeout);
+
+            updateDisplay();
+            pulseDisplay();
+        }
+
+        function calculateBPM() {
+            if (taps.length < 2) {
+                return null;
+            }
+
+            const intervals = [];
+            for (let i = 1; i < taps.length; i++) {
+                intervals.push(taps[i] - taps[i - 1]);
+            }
+
+            const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+            return Math.round(60000 / avgInterval);
+        }
+
+        function getAvgInterval() {
+            if (taps.length < 2) {
+                return null;
+            }
+
+            const intervals = [];
+            for (let i = 1; i < taps.length; i++) {
+                intervals.push(taps[i] - taps[i - 1]);
+            }
+
+            const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+            return Math.round(avgInterval);
+        }
+
+        function updateDisplay() {
+            const bpm = calculateBPM();
+            const avgInterval = getAvgInterval();
+
+            if (bpm !== null) {
+                bpmDisplay.textContent = bpm;
+            } else {
+                bpmDisplay.textContent = '--';
+            }
+
+            tapCountDisplay.textContent = taps.length;
+
+            if (avgInterval !== null) {
+                avgIntervalDisplay.textContent = avgInterval;
+            } else {
+                avgIntervalDisplay.textContent = '--';
+            }
+        }
+
+        function pulseDisplay() {
+            bpmDisplay.classList.add('pulse');
+            setTimeout(() => {
+                bpmDisplay.classList.remove('pulse');
+            }, 100);
+        }
+
+        function reset() {
+            taps.length = 0;
+            clearTimeout(resetTimer);
+            updateDisplay();
+        }
+
+        tapButton.addEventListener('click', recordTap);
+        resetButton.addEventListener('click', reset);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                recordTap();
+            }
+        });
+    </script>
+</body>
+</html>
